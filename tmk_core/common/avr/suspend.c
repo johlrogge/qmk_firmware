@@ -8,8 +8,20 @@
 #include "suspend_avr.h"
 #include "suspend.h"
 #include "timer.h"
+#include "led.h"
+#include "host.h"
+#include "rgblight_reconfig.h"
+
 #ifdef PROTOCOL_LUFA
-#include "lufa.h"
+	#include "lufa.h"
+#endif
+
+#ifdef AUDIO_ENABLE
+    #include "audio.h"
+#endif /* AUDIO_ENABLE */
+
+#if defined(RGBLIGHT_SLEEP) && defined(RGBLIGHT_ENABLE)
+  #include "rgblight.h"
 #endif
 
 
@@ -30,6 +42,10 @@ __asm__ __volatile__ (  \
 )
 
 
+/** \brief Suspend idle
+ *
+ * FIXME: needs doc
+ */
 void suspend_idle(uint8_t time)
 {
     cli();
@@ -40,7 +56,27 @@ void suspend_idle(uint8_t time)
     sleep_disable();
 }
 
-/* Power down MCU with watchdog timer
+
+// TODO: This needs some cleanup
+
+/** \brief Run keyboard level Power down
+ *
+ * FIXME: needs doc
+ */
+__attribute__ ((weak))
+void suspend_power_down_user (void) { }
+/** \brief Run keyboard level Power down
+ *
+ * FIXME: needs doc
+ */
+__attribute__ ((weak))
+void suspend_power_down_kb(void) {
+  suspend_power_down_user();
+}
+
+#ifndef NO_SUSPEND_POWER_DOWN
+/** \brief Power down MCU with watchdog timer
+ *
  * wdto: watchdog timer timeout defined in <avr/wdt.h>
  *          WDTO_15MS
  *          WDTO_30MS
@@ -54,6 +90,11 @@ void suspend_idle(uint8_t time)
  *          WDTO_8S
  */
 static uint8_t wdt_timeout = 0;
+
+/** \brief Power down
+ *
+ * FIXME: needs doc
+ */
 static void power_down(uint8_t wdto)
 {
 #ifdef PROTOCOL_LUFA
@@ -63,6 +104,25 @@ static void power_down(uint8_t wdto)
 
     // Watchdog Interrupt Mode
     wdt_intr_enable(wdto);
+
+#ifdef BACKLIGHT_ENABLE
+	backlight_set(0);
+#endif
+
+	// Turn off LED indicators
+	led_set(0);
+
+	#ifdef AUDIO_ENABLE
+        // This sometimes disables the start-up noise, so it's been disabled
+		// stop_all_notes();
+	#endif /* AUDIO_ENABLE */
+#if defined(RGBLIGHT_SLEEP) && defined(RGBLIGHT_ENABLE)
+#ifdef RGBLIGHT_ANIMATIONS
+  rgblight_timer_disable();
+#endif
+  rgblight_disable_noeeprom();
+#endif
+  suspend_power_down_kb();
 
     // TODO: more power saving
     // See PicoPower application note
@@ -79,10 +139,19 @@ static void power_down(uint8_t wdto)
     // Disable watchdog after sleep
     wdt_disable();
 }
+#endif
 
+/** \brief Suspend power down
+ *
+ * FIXME: needs doc
+ */
 void suspend_power_down(void)
 {
+	suspend_power_down_kb();
+
+#ifndef NO_SUSPEND_POWER_DOWN
     power_down(WDTO_15MS);
+#endif
 }
 
 __attribute__ ((weak)) void matrix_power_up(void) {}
@@ -95,10 +164,28 @@ bool suspend_wakeup_condition(void)
     for (uint8_t r = 0; r < MATRIX_ROWS; r++) {
         if (matrix_get_row(r)) return true;
     }
-    return false;
+     return false;
 }
 
-// run immediately after wakeup
+/** \brief run user level code immediately after wakeup
+ *
+ * FIXME: needs doc
+ */
+__attribute__ ((weak))
+void suspend_wakeup_init_user(void) { }
+
+/** \brief run keyboard level code immediately after wakeup
+ *
+ * FIXME: needs doc
+ */
+__attribute__ ((weak))
+void suspend_wakeup_init_kb(void) {
+  suspend_wakeup_init_user();
+}
+/** \brief run immediately after wakeup
+ *
+ * FIXME: needs doc
+ */
 void suspend_wakeup_init(void)
 {
     // clear keyboard state
@@ -106,6 +193,17 @@ void suspend_wakeup_init(void)
 #ifdef BACKLIGHT_ENABLE
     backlight_init();
 #endif
+	led_set(host_keyboard_leds());
+#if defined(RGBLIGHT_SLEEP) && defined(RGBLIGHT_ENABLE)
+#ifdef BOOTLOADER_TEENSY
+  wait_ms(10);
+#endif
+  rgblight_enable_noeeprom();
+#ifdef RGBLIGHT_ANIMATIONS
+  rgblight_timer_enable();
+#endif
+#endif
+    suspend_wakeup_init_kb();
 }
 
 #ifndef NO_SUSPEND_POWER_DOWN
