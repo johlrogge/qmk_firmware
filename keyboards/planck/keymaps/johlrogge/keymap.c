@@ -1,8 +1,11 @@
 // This is the canonical layout file for the Quantum project. If you want to add another keyboard,
 // this is the style you want to emulate.
 
+#include QMK_KEYBOARD_H
 #include "planck.h"
+#include "config.h"
 #include "backlight.h"
+#include "action_layer.h"
 #include "keymap_extras/keymap_nordic.h"
 #include "sv.h"
 #include "i3.h"
@@ -33,7 +36,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [_RS] = { /* RAISE */
   {KC_TRNS, KC_PERC, NO_CIRC, NO_LESS, NO_LBRC, NO_PLUS, NO_MINS, NO_RBRC, NO_GRTR, NO_EQL,  NO_DLR,  NO_PND},
   {KC_TRNS, KC_HASH, NO_QUO2, NO_LCBR, NO_LPRN, NO_ASTR, NO_SLSH, NO_RPRN, NO_RCBR, NO_APOS, NO_UNDS, NO_EURO},
-  {KC_TRNS, SV_BSLS, NO_COLN, KC_EXLM, NO_AMP,  NO_AT,   NO_TILD, SV_PIPE, NO_QUES, NO_SCLN, NO_ACUT, KC_TRNS},
+  {KC_TRNS, SV_BSLS, NO_COLN, KC_EXLM, NO_AMPR, NO_AT,   NO_TILD, SV_PIPE, NO_QUES, NO_SCLN, NO_ACUT, KC_TRNS},
   {KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_MNXT, KC_MPLY, KC_TRNS, KC_TRNS}
 },
 [_LW] = { /* LOWER */

@@ -1,7 +1,8 @@
 #ifndef I3_H
 #define I3_H
 
-#include "keymap_common.h"
+#include QMK_KEYBOARD_H
+
 
 #define I3_WS1 LGUI(KC_1)
 #define I3_WS2 LGUI(KC_2)
